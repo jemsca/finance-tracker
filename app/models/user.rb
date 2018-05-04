@@ -26,5 +26,37 @@ class User < ActiveRecord::Base
   def can_add_stock?(ticker_symbol)
     under_stock_limit? && !stock_already_added?(ticker_symbol)
   end
+  
+  def self.search(name)
+    name.strip!
+    name.downcase!
+    to_send_back = (first_name_matches(name) + last_name_matches(name) + email_matches(name)).uniq
+    return nil unless to_send_back
+    to_send_back
+  end
+  
+  def self.first_name_matches(name)
+    matches("first_name", name)
+  end
+  
+  def self.last_name_matches(name)
+    matches("last_name", name)
+  end
+  
+  def self.email_matches(name)
+    matches("email", name)
+  end
+  
+  def self.matches(field_name, name)
+    User.where("#{field_name} like ?", "%#{name}%")
+  end
+  
+  def except_current_user(users)
+    users.reject { |user| user.id == self.id }
+  end
+  
+  def not_friends_with?(friend_id)
+    friendships.where(friend_id: friend_id).count < 1
+  end
 
 end
